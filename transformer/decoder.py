@@ -93,6 +93,7 @@ if __name__ == "__main__":
     
     # 1. Simulating English Source Input: Batch of 2, 12 tokens long
     src_input = torch.randint(0, SRC_VOCAB_SIZE, (2, 12))
+    src_mask = (src_input != 0).unsqueeze(1).unsqueeze(2)
     # 2. Simulating Vietnamese Target Input: Batch of 2, 9 tokens long (shifted right)
     tgt_input = torch.randint(0, TGT_VOCAB_SIZE, (2, 9))
     
@@ -102,7 +103,7 @@ if __name__ == "__main__":
         enc_context = encoder(x=src_input) # Shape: (2, 12, 512)
         print(enc_context.shape)
         # Pass target tokens + encoder context through decoder
-        predictions = decoder(x=tgt_input, encoder_output=enc_context) # Shape: (2, 9, 8000)
+        predictions = decoder(x=tgt_input, encoder_output=enc_context, src_mask=src_mask) # Shape: (2, 9, 8000)
         
     print(f"Final Output Logits Shape: {predictions.shape}")
     assert predictions.shape == (2, 9, TGT_VOCAB_SIZE)

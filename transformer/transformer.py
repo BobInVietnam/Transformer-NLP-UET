@@ -55,8 +55,7 @@ class Transformer(nn.Module):
         self, 
         src: torch.Tensor, 
         tgt: torch.Tensor, 
-        src_mask: torch.Tensor = None, 
-        tgt_mask: torch.Tensor = None
+        src_mask: torch.Tensor = None
     ) -> torch.Tensor:
         """
         Execution Pipeline:
@@ -113,6 +112,7 @@ if __name__ == "__main__":
     
     # Mock source tokens (e.g., input sentences)
     mock_src_batch = torch.randint(low=0, high=SRC_VOCAB_SIZE, size=(BATCH_SIZE, SRC_SEQ_LEN))
+    mock_src_mask = (mock_src_batch != 0).unsqueeze(1).unsqueeze(2)
     # Mock target tokens (e.g., right-shifted target tracking sentences)
     mock_tgt_batch = torch.randint(low=0, high=TGT_VOCAB_SIZE, size=(BATCH_SIZE, TGT_SEQ_LEN))
     
@@ -123,7 +123,7 @@ if __name__ == "__main__":
     # Execute full pipeline forward pass under evaluation mode (deactivates dropout)
     transformer_model.eval()
     with torch.no_grad():
-        output_logits = transformer_model(src=mock_src_batch, tgt=mock_tgt_batch)
+        output_logits = transformer_model(src=mock_src_batch, tgt=mock_tgt_batch, src_mask=mock_src_mask)
         
     print(f"Resulting Vocabulary Logits Geometry: {output_logits.shape}")
     

@@ -1,7 +1,16 @@
 import torch
 import math
 
-x = torch.randn(1, 6, 512)
-x = x.view(1, 6, 8, 64)
-print(x.shape)
-print(x)
+seq_len = 6
+mymask = torch.tensor([[True, True, True, True],
+                     [True, True, False, False],
+                     [True, True, True, False]])
+
+
+mask = mymask.unsqueeze(1).unsqueeze(-2)
+mask = mask.expand(-1, -1, 4, -1)
+t_mask = mask.transpose(2, 3)
+
+result = mask & t_mask
+print(mymask.shape[0])
+print(result)
