@@ -1,33 +1,39 @@
-from collections import Counter
+from data.tokenizer import tokenize
 
-def build_vocab(texts):
+class Vocabulary:
 
-    counter = Counter()
+    def __init__(self):
 
-    for text in texts:
+        self.word2idx = {
+            "<PAD>": 0,
+            "<UNK>": 1
+        }
 
-        tokens = text.lower().split()
+        self.idx2word = {
+            0: "<PAD>",
+            1: "<UNK>"
+        }
 
-        counter.update(tokens)
+        self.idx = 2
 
-    vocab = {
-        "<pad>": 0,
-        "<unk>": 1
-    }
+    def build_vocab(self, dataframe):
 
-    for token in counter:
+        for text in dataframe["article"]:
 
-        vocab[token] = len(vocab)
+            tokens = tokenize(text)
 
-    return vocab
+            for token in tokens:
 
-#test
+                if token not in self.word2idx:
 
-texts = [
-    "i love ai",
-    "i study nlp"
-]
+                    self.word2idx[token] = self.idx
+                    self.idx2word[self.idx] = token
 
-vocab = build_vocab(texts)
+                    self.idx += 1
 
-print(vocab)
+    def numericalize(self, tokens):
+
+        return [
+            self.word2idx.get(token, 1)
+            for token in tokens
+        ]
