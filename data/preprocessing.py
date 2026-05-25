@@ -20,10 +20,8 @@ def text_pipeline(text, vocab):
 
     # preprocess
     text = preprocess_text(text)
-
     # tokenize
     tokens = tokenize(text)
-
     # token -> id
     ids = vocab.numericalize(tokens)
 

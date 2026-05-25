@@ -5,29 +5,19 @@ from data.preprocessing import text_pipeline
 
 class SummaryDataset(Dataset):
 
-    def __init__(
-        self,
-        dataframe,
-        vocab
-    ):
-
+    def __init__(self, dataframe, src_vocab, tgt_vocab):
         self.article_sequences = [
-
             text_pipeline(
                 text=t,
-                vocab=vocab
+                vocab=src_vocab
             )
-
             for t in dataframe["article"]
         ]
-
         self.summary_sequences = [
-
             text_pipeline(
                 text=t,
-                vocab=vocab
+                vocab=tgt_vocab
             )
-
             for t in dataframe["summary"]
         ]
 
@@ -38,8 +28,6 @@ class SummaryDataset(Dataset):
     def __getitem__(self, idx):
 
         return (
-
             self.article_sequences[idx],
-
             self.summary_sequences[idx]
         )

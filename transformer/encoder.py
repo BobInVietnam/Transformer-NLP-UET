@@ -1,10 +1,10 @@
 import torch
 import torch.nn as nn
-from addnorm import LayerNorm, AddAndNorm
-from embedding import InputEmbedding
-from feedforward import PositionWiseFeedForward
-from multihead_attention import MultiHeadAttention
-from positional_encoding import PositionalEncoding
+from transformer.addnorm import LayerNorm, AddAndNorm
+from transformer.embedding import InputEmbedding
+from transformer.feedforward import PositionWiseFeedForward
+from transformer.multihead_attention import MultiHeadAttention
+from transformer.positional_encoding import PositionalEncoding
 
 class TransformerEncoderLayer(nn.Module):
     """A single modular layer containing Attention, FFN, and Add & Norm wrappers."""

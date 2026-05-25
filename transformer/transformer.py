@@ -2,13 +2,8 @@ import torch
 import torch.nn as nn
 
 # Import the existing modular components you created
-from embedding import InputEmbedding
-from positional_encoding import PositionalEncoding
-from multihead_attention import MultiHeadAttention
-from addnorm import LayerNorm, AddAndNorm
-from feedforward import PositionWiseFeedForward
-from encoder import TransformerEncoder
-from decoder import TransformerDecoder
+from transformer.encoder import TransformerEncoder
+from transformer.decoder import TransformerDecoder
 
 class Transformer(nn.Module):
     """
@@ -63,7 +58,6 @@ class Transformer(nn.Module):
             src: Source language token sequences (batch_size, src_seq_len)
             tgt: Target language token sequences (batch_size, tgt_seq_len)
             src_mask: Padding mask for the source tokens (batch_size, 1, 1, src_seq_len)
-            tgt_mask: Optional extra padding mask or combined causal mask for target
             
         Returns:
             Logits mapped across target vocabulary dimensions (batch_size, tgt_seq_len, tgt_vocab_size)
