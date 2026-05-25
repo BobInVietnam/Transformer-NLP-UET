@@ -2,17 +2,8 @@ import re
 
 def preprocess_text(text):
 
-    # lowercase
     text = text.lower()
 
-    # remove special characters
-    text = re.sub(
-        r"[^a-zA-Z0-9\s]",
-        "",
-        text
-    )
-
-    # remove extra spaces
     text = re.sub(
         r"\s+",
         " ",
@@ -20,3 +11,20 @@ def preprocess_text(text):
     ).strip()
 
     return text
+
+def tokenize(text):
+
+    return text.split()
+
+def text_pipeline(text, vocab):
+
+    # preprocess
+    text = preprocess_text(text)
+
+    # tokenize
+    tokens = tokenize(text)
+
+    # token -> id
+    ids = vocab.numericalize(tokens)
+
+    return ids

@@ -1,10 +1,6 @@
-import torch
-
 from torch.utils.data import Dataset
 
-from data.tokenizer import tokenize
-
-from data.preprocessing import preprocess_text
+from data.preprocessing import text_pipeline
 
 
 class SummaryDataset(Dataset):
@@ -12,96 +8,38 @@ class SummaryDataset(Dataset):
     def __init__(
         self,
         dataframe,
-        vocab,
-        max_len=128
+        vocab
     ):
 
-        self.dataframe = dataframe
+        self.article_sequences = [
 
-        self.vocab = vocab
+            text_pipeline(
+                text=t,
+                vocab=vocab
+            )
 
-        self.max_len = max_len
+            for t in dataframe["article"]
+        ]
 
-    def pad(self, ids):
+        self.summary_sequences = [
 
-        ids = ids[:self.max_len]
+            text_pipeline(
+                text=t,
+                vocab=vocab
+            )
 
-        while len(ids) < self.max_len:
-
-            ids.append(0)
-
-        return ids
-
-    def create_mask(self, ids):
-
-        return [
-
-            0 if token == 0
-            else 1
-
-            for token in ids
+            for t in dataframe["summary"]
         ]
 
     def __len__(self):
 
-        return len(self.dataframe)
+        return len(self.article_sequences)
 
     def __getitem__(self, idx):
 
-        row = self.dataframe.iloc[idx]
+        return (
 
-        article = row["article"]
+            self.article_sequences[idx],
 
-        summary = row["summary"]
-
-        # preprocess
-        article = preprocess_text(article)
-
-        summary = preprocess_text(summary)
-
-        # tokenize
-        article_tokens = tokenize(article)
-
-        summary_tokens = tokenize(summary)
-
-        # word -> index
-        article_ids = self.vocab.numericalize(
-            article_tokens
+            self.summary_sequences[idx]
         )
-
-        summary_ids = self.vocab.numericalize(
-            summary_tokens
-        )
-
-        # padding
-        article_ids = self.pad(article_ids)
-
-        summary_ids = self.pad(summary_ids)
-
-        # attention mask
-        article_mask = self.create_mask(article_ids)
-
-        summary_mask = self.create_mask(summary_ids)
-
-        return {
-
-            "input_ids": torch.tensor(
-                article_ids,
-                dtype=torch.long
-            ),
-
-            "attention_mask": torch.tensor(
-                article_mask,
-                dtype=torch.long
-            ),
-
-            "decoder_input_ids": torch.tensor(
-                summary_ids,
-                dtype=torch.long
-            ),
-
-            "decoder_attention_mask": torch.tensor(
-                summary_mask,
-                dtype=torch.long
-            )
-        }

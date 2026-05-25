@@ -1,39 +1,72 @@
-from data.tokenizer import tokenize
+from collections import Counter
+
 
 class Vocabulary:
 
-    def __init__(self):
+    def __init__(self, max_vocab=30000):
 
-        self.word2idx = {
-            "<PAD>": 0,
-            "<UNK>": 1
-        }
+        self.max_vocab = max_vocab
 
-        self.idx2word = {
+        self.itos = {
+
             0: "<PAD>",
-            1: "<UNK>"
+            1: "<UNK>",
+            2: "<SOS>",
+            3: "<EOS>"
         }
 
-        self.idx = 2
+        self.stoi = {
 
-    def build_vocab(self, dataframe):
+            "<PAD>": 0,
+            "<UNK>": 1,
+            "<SOS>": 2,
+            "<EOS>": 3
+        }
 
-        for text in dataframe["article"]:
+    def build_vocab(self, sentences):
 
-            tokens = tokenize(text)
+        frequencies = Counter()
 
-            for token in tokens:
+        for sentence in sentences:
 
-                if token not in self.word2idx:
+            sentence = sentence.lower()
 
-                    self.word2idx[token] = self.idx
-                    self.idx2word[self.idx] = token
+            tokens = sentence.split()
 
-                    self.idx += 1
+            frequencies.update(tokens)
+
+        sorted_words = sorted(
+
+            frequencies.items(),
+
+            key=lambda x: x[1],
+
+            reverse=True
+        )
+
+        sorted_words = sorted_words[
+            : self.max_vocab  - 4
+        ]
+
+        idx = 4
+
+        for word, freq in sorted_words:
+
+            self.stoi[word] = idx
+
+            self.itos[idx] = word
+
+            idx += 1
 
     def numericalize(self, tokens):
 
         return [
-            self.word2idx.get(token, 1)
+
+            self.stoi.get(
+                token.lower(),
+                self.stoi["<UNK>"]
+            )
+
             for token in tokens
         ]
+
