@@ -1,0 +1,31 @@
+=== Transformer Training Initialization ===
+Model Configuration: {'src_vocab_size': 40000, 'tgt_vocab_size': 40000, 'd_model': 512, 'num_layers': 6, 'num_heads': 8, 'd_ff': 2048}
+
+Executing pipeline on device: cuda
+Epoch 1 Summary -> Overall Average Training Loss: 6.7951
+Self-contained checkpoint saved cleanly.
+Epoch 2 Summary -> Overall Average Training Loss: 5.6413 | Validation Loss: 5.3833
+Self-contained checkpoint saved cleanly.
+Epoch 3 Summary -> Overall Average Training Loss: 5.2216
+Self-contained checkpoint saved cleanly.
+Epoch 4 Summary -> Overall Average Training Loss: 4.9378 | Validation Loss: 4.9433
+Self-contained checkpoint saved cleanly.
+Epoch 5 Summary -> Overall Average Training Loss: 4.7106
+Self-contained checkpoint saved cleanly.
+Epoch 6 Summary -> Overall Average Training Loss: 4.5118 | Validation Loss: 4.6854
+Self-contained checkpoint saved cleanly.
+Epoch 7 Summary -> Overall Average Training Loss: 4.3346
+Self-contained checkpoint saved cleanly.
+Executing pipeline on device: cuda
+Executing pipeline on device: cuda
+Executing pipeline on device: cuda
+Epoch 8 Summary -> Overall Average Training Loss: 4.1730 | Validation Loss: 4.5416
+Self-contained checkpoint saved cleanly.
+Epoch 9 Summary -> Overall Average Training Loss: 4.0205
+Self-contained checkpoint saved cleanly.
+Epoch 10 Summary -> Overall Average Training Loss: 3.8787 | Validation Loss: 4.4471
+Self-contained checkpoint saved cleanly.
+Epoch 11 Summary -> Overall Average Training Loss: 3.7417
+Self-contained checkpoint saved cleanly.
+Epoch 12 Summary -> Overall Average Training Loss: 3.6106 | Validation Loss: 4.4179
+Self-contained checkpoint saved cleanly.
