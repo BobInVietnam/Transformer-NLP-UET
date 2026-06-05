@@ -4,7 +4,7 @@ from torch.utils.data import DataLoader
 
 from torch.nn.utils.rnn import pad_sequence
 
-from data.dataset import SummaryDataset
+from data.dataset import SummaryDataset, PyViSummaryDataset
 
 
 def collate_fn(batch):
@@ -67,6 +67,27 @@ def get_dataloader(
     shuffle=True
 ):
     dataset = SummaryDataset(
+        dataframe=dataframe,
+        src_vocab=src_vocab,
+        tgt_vocab=tgt_vocab
+    )
+    loader = DataLoader(
+        dataset=dataset,
+        batch_size=batch_size,
+        shuffle=shuffle,
+        collate_fn=collate_fn
+    )
+
+    return loader
+
+def get_pyvi_dataloader(
+    dataframe,
+    src_vocab,
+    tgt_vocab,
+    batch_size=32,
+    shuffle=True
+):
+    dataset = PyViSummaryDataset(
         dataframe=dataframe,
         src_vocab=src_vocab,
         tgt_vocab=tgt_vocab

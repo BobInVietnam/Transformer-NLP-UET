@@ -1,4 +1,5 @@
 import re
+from pyvi import ViTokenizer
 
 def preprocess_text(text):
 
@@ -22,6 +23,17 @@ def text_pipeline(text, vocab):
     text = preprocess_text(text)
     # tokenize
     tokens = tokenize(text)
+    # token -> id
+    ids = vocab.numericalize(tokens)
+
+    return ids
+
+def pyvi_text_pipeline(text, vocab):
+
+    # preprocess
+    text = preprocess_text(text)
+    # tokenize
+    tokens = ViTokenizer.tokenize(text)
     # token -> id
     ids = vocab.numericalize(tokens)
 
