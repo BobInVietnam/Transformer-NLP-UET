@@ -7,25 +7,33 @@ from transformer.multihead_attention import MultiHeadAttention
 from transformer.positional_encoding import PositionalEncoding
 
 class TransformerEncoderLayer(nn.Module):
-    """A single modular layer containing Attention, FFN, and Add & Norm wrappers."""
+    """A single modular Pre-LN layer containing Attention, FFN, and residual wrappers."""
     def __init__(self, d_model: int, num_heads: int, d_ff: int, dropout: float = 0.1):
         super().__init__()
         self.self_attention = MultiHeadAttention(d_model, num_heads)
         self.feed_forward = PositionWiseFeedForward(d_model, d_ff, dropout)
         
-        # We need two separate Add & Norm structures since there are two sub-layers
-        self.add_norm_1 = AddAndNorm(d_model, dropout)
-        self.add_norm_2 = AddAndNorm(d_model, dropout)
+        # Pre-LN Change: Use separate, pure LayerNorm layers and a separate Dropout layer
+        self.norm1 = LayerNorm(d_model)
+        self.norm2 = LayerNorm(d_model)
+        self.dropout = nn.Dropout(dropout)
 
     def forward(self, x: torch.Tensor, mask: torch.Tensor = None) -> torch.Tensor:
-        # Sub-layer 1: Self-Attention. 
-        # In an Encoder, Queries, Keys, and Values all stem from the same input tensor 'x'
-        attn_out = self.self_attention(q=x, k=x, v=x, mask=mask)
-        x = self.add_norm_1(x, attn_out)
+        # --- Sub-layer 1: Self-Attention (Pre-LN) ---
+        # 1. Normalize the input 'x' FIRST
+        norm_x = self.norm1(x)
+        # 2. Pass the normalized version to the attention module
+        attn_out = self.self_attention(q=norm_x, k=norm_x, v=norm_x, mask=mask)
+        # 3. Add dropout to the sublayer output and add it to the original raw 'x' (Residual)
+        x = x + self.dropout(attn_out)
         
-        # Sub-layer 2: Position-wise Feed-Forward
-        ffn_out = self.feed_forward(x)
-        x = self.add_norm_2(x, ffn_out)
+        # --- Sub-layer 2: Position-wise Feed-Forward (Pre-LN) ---
+        # 1. Normalize the combined 'x' FIRST
+        norm_x2 = self.norm2(x)
+        # 2. Pass the normalized version to the feed-forward network
+        ffn_out = self.feed_forward(norm_x2)
+        # 3. Add dropout to the sublayer output and add it back to 'x' (Residual)
+        x = x + self.dropout(ffn_out)
         
         return x
 
