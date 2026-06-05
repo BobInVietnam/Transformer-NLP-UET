@@ -8,27 +8,37 @@ from transformer.positional_encoding import PositionalEncoding
 from transformer.encoder import TransformerEncoder
 
 class TransformerDecoderLayer(nn.Module):
-    """A single modular layer containing Attention, FFN, and Add & Norm wrappers."""
+    """A single modular Pre-LN layer containing Masked Attention, Cross Attention, and FFN."""
     def __init__(self, d_model: int, num_heads: int, d_ff: int, dropout: float = 0.1):
         super().__init__()
         self.masked_self_attention = MultiHeadAttention(d_model, num_heads)
-        self.feed_forward = PositionWiseFeedForward(d_model, d_ff, dropout)
         self.cross_self_attention = MultiHeadAttention(d_model, num_heads)
+        self.feed_forward = PositionWiseFeedForward(d_model, d_ff, dropout)
         
-        self.add_norm_1 = AddAndNorm(d_model, dropout)
-        self.add_norm_2 = AddAndNorm(d_model, dropout)
-        self.add_norm_3 = AddAndNorm(d_model, dropout)
+        # Pre-LN Change: Explicitly track 3 distinct normalization checkpoints
+        self.norm1 = LayerNorm(d_model)
+        self.norm2 = LayerNorm(d_model)
+        self.norm3 = LayerNorm(d_model)
+        self.dropout = nn.Dropout(dropout)
         
     def forward(self, encoder_output: torch.Tensor, x: torch.Tensor, mask: torch.Tensor, src_mask: torch.Tensor = None) -> torch.Tensor:
-        masked_attn_out = self.masked_self_attention(q=x, k=x, v=x, mask=mask)
-        x = self.add_norm_1(x, masked_attn_out)
+        # --- Sub-layer 1: Masked Self-Attention (Pre-LN) ---
+        norm_x = self.norm1(x)
+        masked_attn_out = self.masked_self_attention(q=norm_x, k=norm_x, v=norm_x, mask=mask)
+        x = x + self.dropout(masked_attn_out)
         
-        cross_attn_out = self.cross_self_attention(q=x, k=encoder_output, v=encoder_output, mask=src_mask)
-        x = self.add_norm_2(x, cross_attn_out)
+        # --- Sub-layer 2: Cross Attention to Encoder Output (Pre-LN) ---
+        norm_x2 = self.norm2(x)
+        # Note: ONLY the Query vector 'q' stemming from the decoder path is normalized here!
+        # Keys and Values come from the encoder_output, which was already normalized by the encoder's stack.
+        cross_attn_out = self.cross_self_attention(q=norm_x2, k=encoder_output, v=encoder_output, mask=src_mask)
+        x = x + self.dropout(cross_attn_out)
         
-        # Sub-layer 3: Position-wise Feed Forward
-        ffn_out = self.feed_forward(x)
-        x = self.add_norm_3(x, ffn_out)
+        # --- Sub-layer 3: Position-wise Feed Forward (Pre-LN) ---
+        norm_x3 = self.norm3(x)
+        ffn_out = self.feed_forward(norm_x3)
+        x = x + self.dropout(ffn_out)
+        
         return x
         
 class TransformerDecoder(nn.Module):
