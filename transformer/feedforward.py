@@ -8,7 +8,7 @@ class PositionWiseFeedForward(nn.Module):
         self.w_1 = nn.Linear(d_model, d_ff)
         # Second linear layer shrinks it back (e.g., 2048 -> 512)
         self.w_2 = nn.Linear(d_ff, d_model)
-        self.activation = nn.ReLU()
+        self.activation = nn.SiLU()
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
