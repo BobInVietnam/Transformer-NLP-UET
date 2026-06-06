@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from transformer.addnorm import LayerNorm, AddAndNorm
+from transformer.rmsnorm import RMSNorm
 from transformer.embedding import InputEmbedding
 from transformer.feedforward import PositionWiseFeedForward
 from transformer.multihead_attention import MultiHeadAttention
@@ -13,9 +13,9 @@ class TransformerEncoderLayer(nn.Module):
         self.self_attention = MultiHeadAttention(d_model, num_heads)
         self.feed_forward = PositionWiseFeedForward(d_model, d_ff, dropout)
         
-        # Pre-LN Change: Use separate, pure LayerNorm layers and a separate Dropout layer
-        self.norm1 = LayerNorm(d_model)
-        self.norm2 = LayerNorm(d_model)
+        # Pre-LN Change: Use separate, RMSrNorm layers and a separate Dropout layer
+        self.norm1 = RMSNorm(d_model)
+        self.norm2 = RMSNorm(d_model)
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x: torch.Tensor, mask: torch.Tensor = None) -> torch.Tensor:
@@ -52,7 +52,7 @@ class TransformerEncoder(nn.Module):
         ])
         
         # Final normalization block applied to the output of the full stack
-        self.final_layer_norm = LayerNorm(d_model)
+        self.final_layer_norm = RMSNorm(d_model)
 
     def forward(self, x: torch.Tensor, mask: torch.Tensor = None) -> torch.Tensor:
         # x shape: (batch_size, seq_len) -> absolute integer token IDs

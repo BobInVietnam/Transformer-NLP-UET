@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from transformer.addnorm import LayerNorm, AddAndNorm
+from transformer.rmsnorm import RMSNorm
 from transformer.embedding import InputEmbedding
 from transformer.feedforward import PositionWiseFeedForward
 from transformer.multihead_attention import MultiHeadAttention
@@ -16,9 +16,9 @@ class TransformerDecoderLayer(nn.Module):
         self.feed_forward = PositionWiseFeedForward(d_model, d_ff, dropout)
         
         # Pre-LN Change: Explicitly track 3 distinct normalization checkpoints
-        self.norm1 = LayerNorm(d_model)
-        self.norm2 = LayerNorm(d_model)
-        self.norm3 = LayerNorm(d_model)
+        self.norm1 = RMSNorm(d_model)
+        self.norm2 = RMSNorm(d_model)
+        self.norm3 = RMSNorm(d_model)
         self.dropout = nn.Dropout(dropout)
         
     def forward(self, encoder_output: torch.Tensor, x: torch.Tensor, mask: torch.Tensor, src_mask: torch.Tensor = None) -> torch.Tensor:
@@ -55,7 +55,7 @@ class TransformerDecoder(nn.Module):
             for _ in range(num_layers)
         ])
         
-        self.final_layer_norm = LayerNorm(d_model)
+        self.final_layer_norm = RMSNorm(d_model)
         # Final Linear layer projects d_model back to the Vocabulary Size
         self.fc_out = nn.Linear(d_model, vocab_size)
 
