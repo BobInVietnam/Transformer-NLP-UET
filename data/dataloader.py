@@ -4,7 +4,7 @@ from torch.utils.data import DataLoader
 
 from torch.nn.utils.rnn import pad_sequence
 
-from data.dataset import SummaryDataset
+from data.spacydataset import SummaryDataset
 
 
 def collate_fn(batch):
@@ -12,23 +12,14 @@ def collate_fn(batch):
     decoder_inputs = []
     target_labels = []
     
-    # Explicit IDs matching your Vocabulary class structure
-    sos_id = 2
-    eos_id = 3
-    
-    for article_ids, summary_ids in batch:
-        # 1. Process Articles (Encoder side remains unchanged)
-        articles.append(torch.tensor(article_ids, dtype=torch.long))
-        
-        # 2. Construct Decoder Input: Append <SOS> at the front + True summary IDs
-        # e.g., [2, word1_id, word2_id, ...]
-        dec_in_seq = [sos_id] + summary_ids
-        decoder_inputs.append(torch.tensor(dec_in_seq, dtype=torch.long))
-        
-        # 3. Construct Target Labels: True summary IDs + Append <EOS> at the back
-        # e.g., [word1_id, word2_id, ..., 3]
-        label_seq = summary_ids + [eos_id]
-        target_labels.append(torch.tensor(label_seq, dtype=torch.long))
+    for src_seq, tgt_seq in batch:
+            articles.append(torch.tensor(src_seq))
+            
+            # Teacher Forcing Shifting:
+            # Input drops the final <EOS> token -> Starts with <SOS>
+            decoder_inputs.append(torch.tensor(tgt_seq[:-1]))
+            # Label drops the starting <SOS> token -> Ends with <EOS>
+            target_labels.append(torch.tensor(tgt_seq[1:]))
 
     # Dynamic padding across the distinct sequences
     articles_padded = pad_sequence(
@@ -50,7 +41,7 @@ def collate_fn(batch):
     )
     
     # Generate Encoder padding mask
-    article_mask = (articles_padded != 0).long()
+    article_mask = (articles_padded != 0).long().unsqueeze(1).unsqueeze(2)
 
     return {
         "input_ids": articles_padded,
@@ -67,7 +58,7 @@ def get_dataloader(
     shuffle=True
 ):
     dataset = SummaryDataset(
-        dataframe=dataframe,
+        df=dataframe,
         src_vocab=src_vocab,
         tgt_vocab=tgt_vocab
     )

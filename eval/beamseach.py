@@ -36,7 +36,7 @@ def generate_and_decode_batch_beam_search(
     with torch.no_grad():
         for batch in progress_bar:
             input_ids = batch["input_ids"].to(device)
-            attention_mask = batch["attention_mask"].unsqueeze(1).unsqueeze(2).to(device)
+            attention_mask = batch["attention_mask"].to(device)
             labels = batch["labels"]  # Kept on CPU for string decoding mappings
             
             batch_size = input_ids.size(0)
