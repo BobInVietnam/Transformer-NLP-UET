@@ -1,61 +1,53 @@
 import torch
 import torch.nn as nn
-import math
+from transformer.rope import RotaryPositionalEmbedding
 
 class MultiHeadAttention(nn.Module):
     def __init__(self, d_model: int, num_heads: int):
         super().__init__()
-        assert d_model % num_heads == 0, "d_model must be divisible by num_heads"
-        
-        self.d_model = d_model
         self.num_heads = num_heads
-        self.d_k = d_model // num_heads
+        self.d_model = d_model
+        self.head_dim = d_model // num_heads # e.g., 512 // 8 = 64
         
-        # Define the weight matrices as Linear layers (without bias, per original paper)
-        self.w_q = nn.Linear(d_model, d_model, bias=False)
-        self.w_k = nn.Linear(d_model, d_model, bias=False)
-        self.w_v = nn.Linear(d_model, d_model, bias=False)
+        self.q_linear = nn.Linear(d_model, d_model)
+        self.k_linear = nn.Linear(d_model, d_model)
+        self.v_linear = nn.Linear(d_model, d_model)
+        self.out_linear = nn.Linear(d_model, d_model)
         
-        # Final output projection matrix
-        self.w_o = nn.Linear(d_model, d_model, bias=False)
+        # Instantiate RoPE explicitly bound to the head dimension size
+        self.rope = RotaryPositionalEmbedding(dim=self.head_dim)
+
+    def _apply_rope(self, t: torch.Tensor, cos: torch.Tensor, sin: torch.Tensor) -> torch.Tensor:
+        # t shape: (batch_size, num_heads, seq_len, head_dim)
+        # Rotary formula: R(t) = t * cos(positions) + rotate_half(t) * sin(positions)
+        return (t * cos) + (self.rope._rotate_half(t) * sin)
+
+    def forward(self, q, k, v, mask=None):
+        batch_size, seq_len, _ = q.size()
+        k_seq_len = k.size(1)
         
-    def forward(self, q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, mask: torch.Tensor = None):
-        # Input shape: (batch_size, seq_len, d_model)
-        batch_size = q.size(0)
+        # 1. Project and reshape into standard 4D attention tensors
+        Q = self.q_linear(q).view(batch_size, seq_len, self.num_heads, self.head_dim).transpose(1, 2)
+        K = self.k_linear(k).view(batch_size, k_seq_len, self.num_heads, self.head_dim).transpose(1, 2)
+        V = self.v_linear(v).view(batch_size, k_seq_len, self.num_heads, self.head_dim).transpose(1, 2)
         
-        # 1. Linear projections to get Q, K, V matrices
-        Q = self.w_q(q)  # (batch_size, seq_len, d_model)
-        K = self.w_k(k)  # (batch_size, seq_len, d_model)
-        V = self.w_v(v)  # (batch_size, seq_len, d_model)
+        # 2. Fetch the precomputed cosine and sine rotation tensors
+        cos_q, sin_q = self.rope(Q, seq_len)
+        cos_k, sin_k = self.rope(K, k_seq_len)
         
-        # 2. Split into multiple heads and transpose to shape: (batch_size, num_heads, seq_len, d_k)
-        # We view the d_model dimension as (num_heads, d_k)
-        Q = Q.view(batch_size, -1, self.num_heads, self.d_k).transpose(1, 2)
-        K = K.view(batch_size, -1, self.num_heads, self.d_k).transpose(1, 2)
-        V = V.view(batch_size, -1, self.num_heads, self.d_k).transpose(1, 2)
+        # 3. Physically rotate Queries and Keys (Values are left untouched!)
+        Q = self._apply_rope(Q, cos_q, sin_q)
+        K = self._apply_rope(K, cos_k, sin_k)
         
-        # 3. Calculate Scaled Dot-Product Attention
-        # Transpose K to make it (batch_size, num_heads, d_k, seq_len) for matrix multiplication
-        # scores shape: (batch_size, num_heads, seq_len, seq_len)
-        scores = torch.matmul(Q, K.transpose(-2, -1)) / math.sqrt(self.d_k)
+        # 4. Run standard scaled dot-product attention as normal
+        scores = torch.matmul(Q, K.transpose(-2, -1)) / (self.head_dim ** 0.5)
         
-        # Apply mask if provided (used in Decoder or padding)
         if mask is not None:
-            # Replaces masked out tokens with a massive negative value, so softmax zeroes them out
-            scores = scores.masked_fill(mask == 0, -1e9)
+            scores = scores.masked_fill(mask == 0, float("-inf"))
             
-        # 4. Softmax to get probability distribution weights
         attention_weights = torch.softmax(scores, dim=-1)
-        
-        # 5. Multiply weights by Values to get context representation
-        # context shape: (batch_size, num_heads, seq_len, d_k)
         context = torch.matmul(attention_weights, V)
         
-        # 6. Concatenate heads back together
-        # Transpose back to (batch_size, seq_len, num_heads, d_k)
-        # contiguous() ensures memory layout is unbroken before calling view()
-        context = context.transpose(1, 2).contiguous()
-        context = context.view(batch_size, -1, self.d_model) # (batch_size, seq_len, d_model)
-        
-        # 7. Apply the final linear projection layer
-        return self.w_o(context)
+        # Concatenate heads back together and project
+        context = context.transpose(1, 2).contiguous().view(batch_size, seq_len, self.d_model)
+        return self.out_linear(context)
