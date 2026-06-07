@@ -4,7 +4,6 @@ from transformer.rmsnorm import RMSNorm
 from transformer.embedding import InputEmbedding
 from transformer.feedforward import PositionWiseFeedForward
 from transformer.multihead_attention import MultiHeadAttention
-from transformer.positional_encoding import PositionalEncoding
 from transformer.encoder import TransformerEncoder
 
 class TransformerDecoderLayer(nn.Module):
@@ -46,7 +45,6 @@ class TransformerDecoder(nn.Module):
     def __init__(self, vocab_size: int, d_model: int, num_layers: int, num_heads: int, d_ff: int, max_len: int = 5000, dropout: float = 0.1):
         super().__init__()
         self.embedding = InputEmbedding(vocab_size, d_model)
-        self.positional_encoding = PositionalEncoding(d_model, max_len)
         self.dropout = nn.Dropout(dropout)
         
         # Stack N identical decoder layers
