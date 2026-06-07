@@ -57,7 +57,6 @@ class TransformerEncoder(nn.Module):
         
         # Step 1 & 2: Process Input through Embedding and Positional Encodings
         x = self.embedding(x)                   # (batch_size, seq_len, d_model)
-        x = self.positional_encoding(x)         # (batch_size, seq_len, d_model)
         x = self.dropout(x)
         
         # Step 3: Loop sequentially through the stacked Encoder Layers

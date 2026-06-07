@@ -74,7 +74,6 @@ class TransformerDecoder(nn.Module):
         
         # Step 2: Input Embedding + Positional Encoding
         x = self.embedding(x)
-        x = self.positional_encoding(x)
         x = self.dropout(x)
         
         # Step 3: Pass through the stacked Decoder Layers
