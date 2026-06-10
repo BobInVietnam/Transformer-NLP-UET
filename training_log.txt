@@ -40,3 +40,4 @@ Epoch 15 Summary -> Overall Average Training Loss: 3.6498
 Self-contained checkpoint saved cleanly.
 Epoch 16 Summary -> Overall Average Training Loss: 3.5250 | Validation Loss: 4.5661
 Self-contained checkpoint saved cleanly.
+Executing pipeline on device: cuda
